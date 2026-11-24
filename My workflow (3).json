@@ -1,0 +1,911 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0765ccee-c278-4729-95dc-caac374c22ff",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/ZS=F",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "e8228401-2de8-42ff-aea1-aac639d9a07b",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "url": "https://open.er-api.com/v6/latest/USD",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "bd1630a2-6ff1-4ee6-b171-9f57fbd25e0b",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "62d7c9c1-7c4c-46b1-9f2d-3127750e12f5",
+              "name": "preco_usd",
+              "value": "={{ $('HTTP Request').item.json.chart.result[0].meta.regularMarketPrice / 100 }}",
+              "type": "number"
+            },
+            {
+              "id": "669016d8-8398-4590-ad13-0588b9920522",
+              "name": "preco_brl",
+              "value": "={{ ($('HTTP Request').item.json.chart.result[0].meta.regularMarketPrice / 100) * $json.rates.BRL }}",
+              "type": "number"
+            },
+            {
+              "id": "ed89e563-378a-4f7f-95ab-995d513e6359",
+              "name": "preco_eur",
+              "value": "={{ ($('HTTP Request').item.json.chart.result[0].meta.regularMarketPrice / 100) * $json.rates.EUR }}",
+              "type": "number"
+            },
+            {
+              "id": "64db3ede-8643-45e7-93bd-aebf6b4daa3c",
+              "name": "preco_brl_saca",
+              "value": "={{ (($('HTTP Request').item.json.chart.result[0].meta.regularMarketPrice / 100) * $json.rates.BRL) * 2.2046 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        0
+      ],
+      "id": "9408d8eb-8fb7-4e37-960c-164eaa1794f7",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f102c5b8-03bd-4c6d-b4db-14f92c3a73dd",
+              "leftValue": "={{ $json.preco_brl_saca }}",
+              "rightValue": 125,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        816,
+        -144
+      ],
+      "id": "7c2fe9f0-df8f-4a6d-a4b6-fe046ada279e",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5a8cfa31-403c-4dcd-b4b0-6c071f10ba3b",
+              "leftValue": "={{ $json.preco_brl_saca }}",
+              "rightValue": 147,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        816,
+        128
+      ],
+      "id": "a0990768-b214-43a8-9beb-52ea98ae75a2",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "chatId": "8509993996",
+        "text": "=🌱 Alerta: Preço da soja em zona de COMPRA  Preço atual: R$ {{ $json.preco_brl_saca }} por saca (60kg) US$ {{ $json.preco_usd }} por bushel € {{ $json.preco_eur }} por bushel  Referência de compra: abaixo de R$ 125,00/saca  Este é um alerta automático de monitoramento. A decisão de compra é sua.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        -240
+      ],
+      "id": "1c4a0b28-d94b-450c-a887-1af2429355fd",
+      "name": "Send a text message",
+      "webhookId": "4b196598-63bf-475e-8d0c-c8fe9070611d",
+      "credentials": {
+        "telegramApi": {
+          "id": "Z7QrsOoyarVHS5g0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "8509993996",
+        "text": "=📈 Alerta: Preço da soja em zona de VENDA  Preço atual: R$ {{ $json.preco_brl_saca }} por saca (60kg) US$ {{ $json.preco_usd }} por bushel € {{ $json.preco_eur }} por bushel  Referência de venda: acima de R$ 147,50/saca  Este é um alerta automático de monitoramento. A decisão de venda é sua.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        32
+      ],
+      "id": "66d46820-4056-417e-a2d6-d54963f0fdf2",
+      "name": "Send a text message1",
+      "webhookId": "d8437385-2a49-4210-97bc-533f61dd15c5",
+      "credentials": {
+        "telegramApi": {
+          "id": "Z7QrsOoyarVHS5g0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        16,
+        352
+      ],
+      "id": "2923edf6-8fbe-4105-9d69-b30199527803",
+      "name": "Telegram Trigger",
+      "webhookId": "3eb5cc06-bede-4d26-999b-455ccdba9b45",
+      "credentials": {
+        "telegramApi": {
+          "id": "Z7QrsOoyarVHS5g0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        352
+      ],
+      "id": "5336b33f-5275-435a-bceb-e33f04651ca7",
+      "name": "AI Agent1",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        544,
+        352
+      ],
+      "id": "6c11cf6b-e432-4bb9-87cd-c084cb5b9e7d",
+      "name": "Send a text message3",
+      "webhookId": "86bb674e-8f53-494f-92a8-d0575a6ba74b",
+      "credentials": {
+        "telegramApi": {
+          "id": "Z7QrsOoyarVHS5g0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.8-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        112,
+        560
+      ],
+      "id": "36180acd-131e-4e20-a676-5d48e1a85882",
+      "name": "Google Gemini Chat Model2",
+      "notesInFlow": false,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "NVFWwbGuWA3ch408",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b2068822-89d7-4da9-b8e2-2761b1c6acea",
+              "name": "commodities",
+              "value": "={{ [   { nome: \"Soja\", ticker: \"ZS=F\", unidade: \"bushel\" },   { nome: \"Milho\", ticker: \"ZC=F\", unidade: \"bushel\" },   { nome: \"Café\", ticker: \"KC=F\", unidade: \"libra-peso\" },   { nome: \"Açúcar\", ticker: \"SB=F\", unidade: \"libra-peso\" },   { nome: \"Algodão\", ticker: \"CT=F\", unidade: \"libra-peso\" },   { nome: \"Boi Gordo\", ticker: \"BBOI11.SA\", unidade: \"BRL-direto\" } ] }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        832
+      ],
+      "id": "f37e14d3-2791-4f99-8a0b-5abc89709d7d",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "commodities",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        832,
+        832
+      ],
+      "id": "1af848eb-0951-47f4-9710-a251466f3413",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1040,
+        832
+      ],
+      "id": "ff41fa40-9413-4868-9b3b-40a8c46a4d53",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/ZS=F",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1200,
+        1008
+      ],
+      "id": "ae41d486-45ab-4530-9dbc-397871d6c52d",
+      "name": "HTTP Request4"
+    },
+    {
+      "parameters": {
+        "url": "https://open.er-api.com/v6/latest/USD",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        832
+      ],
+      "id": "54261715-b2bf-484a-9fd4-9e1634ab72a6",
+      "name": "HTTP Request5"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aa65bb08-999d-4410-9146-137d7f1f3e8f",
+              "name": "commodities",
+              "value": "={{ $('Edit Fields2').first().json.commodities }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        608,
+        832
+      ],
+      "id": "1b741f7a-7911-4995-a09b-83e987ca9a40",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const resposta = $input.item.json;\nconst meta = resposta.chart.result[0].meta;\nconst ticker = meta.symbol;\nconst rates = $('Edit Fields3').first().json.rates;\n\nconst precoBruto = meta.regularMarketPrice;\n\nconst config = {\n  \"ZS=F\": { nome: \"Soja\", kgPorUnidade: 27.2155, pesoRefKg: 60, referencia: \"saca de 60kg\" },\n  \"ZC=F\": { nome: \"Milho\", kgPorUnidade: 25.401, pesoRefKg: 60, referencia: \"saca de 60kg\" },\n  \"KC=F\": { nome: \"Café\", kgPorUnidade: 0.453592, pesoRefKg: 60, referencia: \"saca de 60kg\" },\n  \"SB=F\": { nome: \"Açúcar\", kgPorUnidade: 0.453592, pesoRefKg: 50, referencia: \"saca de 50kg\" },\n  \"CT=F\": { nome: \"Algodão\", kgPorUnidade: 0.453592, pesoRefKg: 15, referencia: \"arroba (15kg)\" },\n  \"BBOI11.SA\": { nome: \"Boi Gordo\", direto: true, referencia: \"cota do ETF (referência, não é o preço da arroba)\" }\n};\n\nconst c = config[ticker];\nif (!c) {\n  throw new Error(`Ticker não configurado: ${ticker}`);\n}\n\nif (c.direto) {\n  return { json: { nome: c.nome, ticker, preco_brl_referencia: precoBruto, unidade_referencia: c.referencia, moeda_original: \"BRL\" } };\n}\n\nconst precoUsd = precoBruto / 100; // centavos -> dólares\nconst unidadesPorReferencia = c.pesoRefKg / c.kgPorUnidade;\nconst precoBrl = precoUsd * rates.BRL * unidadesPorReferencia;\n\nreturn { json: { nome: c.nome, ticker, preco_usd: precoUsd, preco_brl_referencia: precoBrl, unidade_referencia: c.referencia, moeda_original: \"USD\" } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        1008
+      ],
+      "id": "363e4e2e-2949-4bc7-81e8-276ec667521a",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        832
+      ],
+      "id": "2b0486ee-1685-4f1c-ad6d-c041e52cb8db",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d5d6ffaa-87f4-4dbe-b957-b835d0d6b0e2",
+              "name": "",
+              "value": "={{ $json.callback_query?.data ?? \"Todas\" }}",
+              "type": "string"
+            },
+            {
+              "id": "f7ae0405-8019-497d-bb2d-e772f1144e1b",
+              "name": "chat_id",
+              "value": "={{ $json.callback_query?.message?.chat?.id ?? 8509993996 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        48,
+        832
+      ],
+      "id": "649d15ac-e74e-4619-a0b7-664508bcea32",
+      "name": "selecao"
+    },
+    {
+      "parameters": {
+        "jsCode": "const selecao = $('selecao').first().json.selecao;\nconst itens = $input.all().map(i => i.json);\n\nconst fmt = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });\nconst norm = (s) => String(s).normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().trim();\n\nconst escolhidos = norm(selecao) === 'todas'\n  ? itens\n  : itens.filter(i => norm(i.nome) === norm(selecao));\n\nif (escolhidos.length === 0) {\n  return [{ json: { mensagem: `Não encontrei \"${selecao}\". Itens recebidos (${itens.length}): ${itens.map(i => i.nome).join(', ') || 'nenhum'}` } }];\n}\n\nconst linhas = escolhidos.map(i =>\n  i.moeda_original === 'BRL'\n    ? `• ${i.nome}: ${fmt(i.preco_brl_referencia)} (cota do ETF BBOI11, só uma referência, não é o preço da arroba)`\n    : `• ${i.nome}: ${fmt(i.preco_brl_referencia)} por ${i.unidade_referencia}`\n);\n\nconst aviso = 'Valores calculados a partir de cotações internacionais (futuros) convertidas para reais. Não substituem a cotação física da sua região.';\n\nreturn [{ json: { mensagem: `Cotações atuais em reais:\\n\\n${linhas.join('\\n')}\\n\\n${aviso}` } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        736
+      ],
+      "id": "cfe3e1ca-6279-43c7-8d09-09e13911d159",
+      "name": "montar mensagem"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('selecao').first().json.chat_id }}",
+        "text": "={{ $json.mensagem }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1456,
+        736
+      ],
+      "id": "f954da9c-4811-434f-a8e7-e143e1692b9d",
+      "name": "Send a text message2",
+      "webhookId": "05d9adba-bfc1-484f-890f-cb7839c0ad89",
+      "credentials": {
+        "telegramApi": {
+          "id": "Z7QrsOoyarVHS5g0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        160,
+        2272
+      ],
+      "id": "c9c92ba1-c7c4-4e08-9a31-a93a74f6100a",
+      "name": "Telegram Trigger1",
+      "webhookId": "1cd52a04-85a5-4241-b3a5-97332055d5f5",
+      "credentials": {
+        "telegramApi": {
+          "id": "Z7QrsOoyarVHS5g0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fc624c2f-93e4-40a5-ae90-00c48daf3316",
+              "leftValue": "={{ !!$json.callback_query }}",
+              "rightValue": "=",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        368,
+        2272
+      ],
+      "id": "ebf8b077-d486-4e56-9504-9ad4f5f1b6f6",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "Qual commodity você quer consultar? Toque em uma opção:",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Soja e Milho",
+                    "additionalFields": {}
+                  },
+                  {
+                    "text": "Café e Açúcar",
+                    "additionalFields": {}
+                  },
+                  {
+                    "text": "Algodão e Boi Gordo",
+                    "additionalFields": {}
+                  },
+                  {
+                    "text": "Todas",
+                    "additionalFields": {}
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        576,
+        2272
+      ],
+      "id": "319de860-7d38-4478-ab7a-7a8bec822972",
+      "name": "Send a text message4",
+      "webhookId": "561cd0ff-48fe-4578-b27a-89a2ec296c03",
+      "credentials": {
+        "telegramApi": {
+          "id": "Z7QrsOoyarVHS5g0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Consulta o preço atual e dados de mercado de ações, fundos imobiliários (FIIs), índices ou criptomoedas via Yahoo Finance. Use sempre que o usuário pedir a cotação ou valor de um ativo.",
+        "url": "={{ \"https://query1.finance.yahoo.com/v8/finance/chart/\" + $fromAI(\"ticker\", \"Código do ativo no formato do Yahoo Finance. Para ações brasileiras adicione .SA no final (ex: PETR4.SA, VALE3.SA). Para ações americanas use apenas o ticker (ex: AAPL, NVDA).\") }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "interval",
+              "value": "1d"
+            },
+            {
+              "name": "range",
+              "value": "1d"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        304,
+        576
+      ],
+      "id": "a42310a7-ed0d-479f-b74e-9c91c8c8fa1c",
+      "name": "buscar_preco"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Consulta a taxa de câmbio atual entre moedas (ex: USD, EUR, GBP para BRL). Use sempre que o usuário perguntar o valor de uma moeda ou precisar converter valores entre moedas.",
+        "url": "={{ \"https://open.er-api.com/v6/latest/\" + $fromAI(\"moeda_origem\", \"Código ISO de 3 letras da moeda de origem em maiúsculo, por exemplo: USD para dólar, EUR para euro, GBP para libra.\") }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        464,
+        560
+      ],
+      "id": "fbae1f82-790f-4208-8405-ae639c9a49c4",
+      "name": "buscar_cambio"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "montar mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request4": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request5": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "selecao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "selecao": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "montar mensagem": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger1": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Send a text message4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_preco": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_cambio": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f21c604c-3974-49b3-97a3-21689c16823e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b852c24926dc6b9e0da304dc7311c426dad0cc44ac3cb88de92588d19deeb6cf"
+  },
+  "nodeGroups": [],
+  "id": "KUq9LmufB7yGLrcN",
+  "tags": []
+}
